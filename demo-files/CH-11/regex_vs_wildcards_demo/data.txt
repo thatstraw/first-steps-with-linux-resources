@@ -1,0 +1,13 @@
+1
+12
+123
+1234
+12345
+007
+2024
+ab
+abab
+ababab
+abababab
+aba
+abc

@@ -1,0 +1,7 @@
+INFO System boot completed
+ERROR Disk failure detected
+WARNING Low memory condition
+ERROR Network timeout
+INFO Previous ERROR resolved
+DEBUG Verbose output enabled
+FAIL Disk write error

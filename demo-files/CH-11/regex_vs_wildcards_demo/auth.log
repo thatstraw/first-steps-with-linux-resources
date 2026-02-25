@@ -1,0 +1,5 @@
+INFO User login successful
+ERROR Invalid password failed
+ERROR Account locked failed
+INFO Session failed unexpectedly
+INFO Session closed

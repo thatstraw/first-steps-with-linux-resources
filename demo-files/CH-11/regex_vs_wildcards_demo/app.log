@@ -1,0 +1,5 @@
+INFO Application started
+ERROR Failed to connect to database
+WARNING Configuration file missing
+DEBUG Verbose logging enabled
+ERROR Timeout occurred

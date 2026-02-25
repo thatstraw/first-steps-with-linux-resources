@@ -1,0 +1,5 @@
+127.0.0.1 - - [12/Jan/2024] "GET /index.html HTTP/1.1" 200 OK
+127.0.0.1 - - [12/Jan/2024] "POST /api/login HTTP/1.0" 201 Created
+127.0.0.1 - - [12/Jan/2024] "GET /health HTTP/1.1" 204 No Content
+127.0.0.1 - - [12/Jan/2024] "GET /admin HTTP/1.1" 404 Not Found
+127.0.0.1 - - [12/Jan/2024] "GET /api/data HTTP/1.0" 500 Internal Server Error
