@@ -1,0 +1,7 @@
+this are some demo logs that don't mean anything.
+
+error
+notice
+warning
+caution
+alert

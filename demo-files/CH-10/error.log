@@ -1,0 +1,7 @@
+[Fri Sep 12 00:00:29.477381 2025] [mpm_prefork:notice] [pid 13907] AH00163: Apache/2.4.58 (Ubuntu) configured -- resuming normal operations
+[Fri Sep 12 00:00:29.477407 2025] [core:notice] [pid 13907] AH00094: Command line: '/usr/sbin/apache2'
+[Fri Sep 12 06:56:51.249365 2025] [mpm_prefork:notice] [pid 13907] AH00170: caught SIGWINCH, shutting down gracefully
+[Fri Sep 12 06:56:51.542071 2025] [mpm_prefork:notice] [pid 42794] AH00163: Apache/2.4.58 (Ubuntu) configured -- resuming normal operations
+[Fri Sep 12 06:56:51.542141 2025] [core:notice] [pid 42794] AH00094: Command line: '/usr/sbin/apache2'
+[Sat Sep 13 00:00:38.091088 2025] [mpm_prefork:notice] [pid 42794] AH00171: Graceful restart requested, doing restart
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message

@@ -1,0 +1,8 @@
+2025-09-01 10:15:23 INFO  System started successfully
+2025-09-01 10:15:24 WARNING Low disk space on /dev/sda1
+2025-09-01 10:15:25 ERROR  Failed to start httpd service
+2025-09-01 10:15:26 INFO  Network connection established
+2025-09-01 10:15:27 ERROR  Permission denied while accessing /etc/shadow
+2025-09-01 10:15:28 error  User 'alice' logged in
+2025-09-01 10:15:29 WARNING High memory usage detected
+2025-09-01 10:15:30 error  Cron job 'backup.sh' started

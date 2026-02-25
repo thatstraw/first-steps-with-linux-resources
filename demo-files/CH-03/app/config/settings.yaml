@@ -1,0 +1,19 @@
+# settings.yml
+app:
+  name: MyCoolApp
+  version: 1.0.0
+
+database:
+  host: localhost
+  port: 5432
+  username: dbuser
+  password: secret
+
+logging:
+  level: INFO
+  file: /var/log/mycoolapp.log
+
+features:
+  signup: true
+  analytics: false
+  debug_mode: true

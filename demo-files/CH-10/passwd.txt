@@ -1,0 +1,5 @@
+cat:x:1001:1001::/home/cat:/bin/bash
+cathy:x:1002:1002::/home/cathy:/bin/bash
+bobcat:x:1003:1003::/home/bobcat:/bin/bash
+james:x:1004:1004::/home/dog:/bin/bash
+catherine:x:1005:1005::/home/catalog:/bin/bash

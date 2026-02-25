@@ -1,0 +1,4 @@
+PORT=9090
+HOST=127.0.0.1
+DEBUG=false
+LOG_LEVEL=debug

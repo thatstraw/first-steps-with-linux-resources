@@ -1,0 +1,4 @@
+System boot completed successfully
+Starting network services
+Error: failed to bring up interface eth0
+Service sshd started
