@@ -1,0 +1,157 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Ensure VMs provision in correct order (no parallel provisioning)
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+Vagrant.configure("2") do |config|
+  
+  
+  # Edge Router/Firewall (Ubuntu + ufw)
+
+  config.vm.define "edge-router" do |edge|
+    edge.vm.box = "ubuntu/focal64"
+    edge.vm.hostname = "edge-router"
+    
+    # eth0 = NAT (default, internet access)
+    # eth1 = Transit to Internal Firewall
+    edge.vm.network "private_network",
+      ip: "10.1.0.254",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "transit-net"
+    
+    edge.vm.provider "virtualbox" do |vb|
+      vb.name = "edge-router"
+      vb.memory = "512"
+      vb.cpus = 1
+    end
+    
+    edge.vm.provision "shell", path: "scripts/edge-router.sh"
+  end
+
+
+  # Internal Firewall (Rocky Linux + firewalld)
+
+  config.vm.define "internal-fw" do |fw|
+    fw.vm.box = "rockylinux/9"
+    fw.vm.hostname = "internal-fw"
+    
+    # eth0 = NAT 
+    # eth1 = Transit network (to edge router)
+    fw.vm.network "private_network",
+      ip: "10.1.0.2",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "transit-net"
+    
+    # eth2 = Server LAN
+    fw.vm.network "private_network",
+      ip: "192.168.10.254",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "server-lan"
+    
+    # eth3 = Client LAN
+    fw.vm.network "private_network",
+      ip: "192.168.20.254",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "client-lan"
+    
+    fw.vm.provider "virtualbox" do |vb|
+      vb.name = "internal-fw"
+      vb.memory = "1024"
+      vb.cpus = 1
+    end
+    
+    # Disable shared folders to avoid guest additions issues
+    fw.vm.synced_folder ".", "/vagrant", disabled: true
+    
+    fw.vm.provision "shell", path: "scripts/internal-fw.sh"
+  end
+
+  # ============================================
+  # Server 1 - Web Server (Ubuntu + ufw)
+  # ============================================
+  config.vm.define "server1" do |srv|
+    srv.vm.box = "ubuntu/focal64"
+    srv.vm.hostname = "web-server"
+    
+    srv.vm.network "private_network",
+      ip: "192.168.10.10",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "server-lan"
+    
+    srv.vm.provider "virtualbox" do |vb|
+      vb.name = "server1-web"
+      vb.memory = "1024"
+      vb.cpus = 1
+    end
+    
+    srv.vm.provision "shell", path: "scripts/server1.sh"
+  end
+
+  # ============================================
+  # Server 2 - DNS/DHCP Server (Rocky + firewalld)
+  # ============================================
+  config.vm.define "server2" do |srv|
+    srv.vm.box = "rockylinux/9"
+    srv.vm.hostname = "dns-server"
+    
+    srv.vm.network "private_network",
+      ip: "192.168.10.20",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "server-lan"
+    
+    srv.vm.provider "virtualbox" do |vb|
+      vb.name = "server2-dns-dhcp"
+      vb.memory = "1024"
+      vb.cpus = 1
+    end
+    
+    # Disable shared folders to avoid guest additions issues
+    srv.vm.synced_folder ".", "/vagrant", disabled: true
+    
+    srv.vm.provision "shell", path: "scripts/server2.sh"
+  end
+
+  # ============================================
+  # Client 1 (Ubuntu)
+  # ============================================
+  config.vm.define "client1" do |client|
+    client.vm.box = "ubuntu/jammy64"
+    client.vm.hostname = "client1"
+    
+    client.vm.network "private_network",
+      ip: "192.168.20.10",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "client-lan"
+    
+    client.vm.provider "virtualbox" do |vb|
+      vb.name = "client1"
+      vb.memory = "512"
+      vb.cpus = 1
+    end
+    
+    client.vm.provision "shell", path: "scripts/client1.sh"
+  end
+
+  # ============================================
+  # Client 2 (Ubuntu)
+  # ============================================
+  config.vm.define "client2" do |client|
+    client.vm.box = "ubuntu/focal64"
+    client.vm.hostname = "client2"
+    
+    client.vm.network "private_network",
+      ip: "192.168.20.20",
+      netmask: "255.255.255.0",
+      virtualbox__intnet: "client-lan"
+    
+    client.vm.provider "virtualbox" do |vb|
+      vb.name = "client2"
+      vb.memory = "512"
+      vb.cpus = 1
+    end
+    
+    client.vm.provision "shell", path: "scripts/client2.sh"
+  end
+
+end

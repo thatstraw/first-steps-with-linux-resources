@@ -1,0 +1,59 @@
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  
+  # Ubuntu Jammy Client
+  config.vm.define "ubuntu-client" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/jammy64"
+    ubuntu.vm.hostname = "ubuntu-client"
+    ubuntu.vm.network "private_network", ip: "192.168.56.10"
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name = "chapter06-ubuntu-client"
+      vb.memory = "2048"
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--groups", "/LinuxCLI-Chapter06"]
+    end
+    ubuntu.vm.provision "shell", inline: <<-SHELL
+      echo "=== Ubuntu Client Setup ==="
+      apt-get update -y
+      echo "Ubuntu client ready for APT/dpkg demonstrations"
+    SHELL
+  end
+
+  # Rocky Linux 9 Client
+  config.vm.define "rocky-client" do |rocky|
+    rocky.vm.box = "rockylinux/9"
+    rocky.vm.hostname = "rocky-client"
+    rocky.vm.synced_folder ".", "/vagrant", disabled: true
+    rocky.vm.network "private_network", ip: "192.168.56.12"
+    rocky.vm.provider "virtualbox" do |vb|
+      vb.name = "chapter06-rocky-client"
+      vb.memory = "2048"
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--groups", "/LinuxCLI-Chapter06"]
+    end
+    rocky.vm.provision "shell", inline: <<-SHELL
+      echo "=== Rocky Client Setup ==="
+      dnf check-update || true
+      echo "Rocky client ready for DNF/YUM/RPM demonstrations"
+    SHELL
+  end
+
+  # Rocky Linux 9 Server (for local repository)
+  config.vm.define "rocky-server" do |rockyserver|
+    rockyserver.vm.box = "rockylinux/9"
+    rockyserver.vm.hostname = "rocky-server"
+    rockyserver.vm.synced_folder ".", "/vagrant", disabled: true
+    rockyserver.vm.network "private_network", ip: "192.168.56.13"
+    rockyserver.vm.provider "virtualbox" do |vb|
+      vb.name = "chapter06-rocky-server"
+      vb.memory = "2048"
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--groups", "/LinuxCLI-Chapter06"]
+    end
+    rockyserver.vm.provision "shell", inline: <<-SHELL
+      echo "=== Rocky Server Setup ==="
+      dnf check-update || true
+      echo "Rocky server ready for local repository demonstrations"
+    SHELL
+  end
+end

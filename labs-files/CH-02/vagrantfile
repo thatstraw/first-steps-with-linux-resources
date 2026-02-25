@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.synced_folder ".", "/vagrant", disabled: true 
+  
+  config.vm.boot_timeout = 900 
+
+  config.vm.define "ubuntu-test" do |vm| 
+    vm.vm.box = "ubuntu/focal64"  
+    
+    vm.vm.hostname = "ubuntu-test"
+    vm.vm.provider "virtualbox" do |vb|
+      vb.gui = true 
+      vb.memory = 2048    
+      vb.cpus = 2    
+      vb.name = "ubuntu-test"   
+    end
+  end
+end
