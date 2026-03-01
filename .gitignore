@@ -1,1 +1,31 @@
-.DS_Store
+# macOS
+**/.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
+
+# Linux
+*~
+.directory
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Vagrant
+.vagrant/
+*.box
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
