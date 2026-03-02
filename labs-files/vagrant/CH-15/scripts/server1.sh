@@ -64,7 +64,11 @@ if ping -c 2 8.8.8.8 >/dev/null 2>&1; then
   echo "✓ Internet reachable"
   echo ""
   echo "Verifying traffic path (should go via 192.168.10.254):"
-  traceroute -n -m 3 8.8.8.8 | head -5
+  if command -v traceroute &> /dev/null; then
+    traceroute -n -m 3 8.8.8.8 | head -5
+  else
+    echo "traceroute not available yet - will be installed with packages"
+  fi
 else
   echo "✗ Internet NOT reachable"
 fi
@@ -83,7 +87,23 @@ systemctl restart ssh
 
 # Install packages for web server, FTP server, and PHP
 apt-get update
-apt-get install -y apache2 vsftpd php php-apache2 libapache2-mod-php net-tools dnsutils traceroute iputils-ping ufw
+apt-get install -y apache2 vsftpd php libapache2-mod-php traceroute net-tools dnsutils iputils-ping ufw
+
+# Verify critical packages were installed
+if ! command -v apache2 &> /dev/null; then
+    echo "ERROR: Apache2 installation failed"
+    exit 1
+fi
+
+if ! command -v vsftpd &> /dev/null; then
+    echo "ERROR: vsftpd installation failed"
+    exit 1
+fi
+
+if ! php -v &> /dev/null; then
+    echo "ERROR: PHP installation failed"
+    exit 1
+fi
 
 # Disable ufw by default - students will configure it
 ufw --force disable
@@ -91,13 +111,32 @@ systemctl disable ufw
 
 # Configure and start web server
 systemctl enable apache2
+systemctl start apache2
 
-# Enable PHP module for Apache
-a2enmod php*
-systemctl reload apache2
+# Enable PHP module for Apache (should be automatic with libapache2-mod-php)
+if command -v a2enmod &> /dev/null; then
+    a2enmod php*
+    systemctl reload apache2
+else
+    echo "WARNING: a2enmod command not found, PHP module may not be enabled"
+fi
+
+# Verify Apache2 is running
+if systemctl is-active --quiet apache2; then
+    echo "✓ Apache2 is running"
+else
+    echo "✗ Apache2 failed to start"
+    systemctl status apache2
+fi
 
 # Configure vsftpd (FTP server)
 echo "Configuring FTP server (vsftpd)..."
+
+# Check if vsftpd config exists
+if [ ! -f /etc/vsftpd.conf ]; then
+    echo "ERROR: vsftpd.conf not found - vsftpd package may not be installed"
+    exit 1
+fi
 
 # Backup original vsftpd config
 cp /etc/vsftpd.conf /etc/vsftpd.conf.backup
@@ -122,8 +161,8 @@ write_enable=YES
 local_umask=022
 file_open_mode=0666
 
-# Security Settings
-chroot_local_user=YES
+# Security Settings - DISABLE chroot for easier file access
+chroot_local_user=NO
 allow_writeable_chroot=YES
 secure_chroot_dir=/var/run/vsftpd/empty
 
@@ -139,8 +178,8 @@ xferlog_enable=YES
 xferlog_std_format=YES
 xferlog_file=/var/log/vsftpd.log
 
-# Upload permissions
-local_root=/var/www/html
+# Upload permissions - Allow access to entire filesystem (no chroot)
+# Users will land in their home directory but can navigate to /var/www/html
 chroot_list_enable=NO
 
 # Connection limits
@@ -161,17 +200,28 @@ echo "vagrant" > /etc/vsftpd.userlist
 
 # Create FTP upload directory and set permissions
 mkdir -p /var/www/html/uploads
-chown www-data:www-data /var/www/html/uploads
-chmod 755 /var/www/html/uploads
+chown vagrant:www-data /var/www/html/uploads
+chmod 775 /var/www/html/uploads
 
 # Allow vagrant user to write to web directory
 usermod -a -G www-data vagrant
-chown -R www-data:www-data /var/www/html
+chown -R vagrant:www-data /var/www/html
 chmod -R 775 /var/www/html
+
+# Create a symbolic link in vagrant's home directory for easy access
+ln -sf /var/www/html /home/vagrant/www
 
 # Enable and start vsftpd
 systemctl enable vsftpd
 systemctl start vsftpd
+
+# Verify vsftpd is running
+if systemctl is-active --quiet vsftpd; then
+    echo "✓ vsftpd is running"
+else
+    echo "✗ vsftpd failed to start"
+    systemctl status vsftpd
+fi
 
 # Create test PHP page
 cat > /var/www/html/info.php <<EOF
@@ -262,7 +312,10 @@ cat > /var/www/html/index.html <<EOF
         <p><strong>Port:</strong> 21</p>
         <p><strong>Username:</strong> vagrant</p>
         <p><strong>Password:</strong> vagrant</p>
+        <p><strong>Home Directory:</strong> /home/vagrant</p>
+        <p><strong>Web Directory:</strong> /var/www/html (accessible via 'cd /var/www/html')</p>
         <p><strong>Upload Directory:</strong> /var/www/html/uploads</p>
+        <p><strong>Quick Access:</strong> 'cd www' (symlink to /var/www/html)</p>
     </div>
     
     <p>This web server is in the Server LAN and initially NOT accessible from Client LAN.</p>
@@ -271,6 +324,13 @@ cat > /var/www/html/index.html <<EOF
 </html>
 EOF
 systemctl start apache2
+
+# Final service status check
+echo ""
+echo "Service Status Check:"
+echo "Apache2: $(systemctl is-active apache2)"
+echo "vsftpd: $(systemctl is-active vsftpd)"
+echo "PHP: $(php -v | head -1 || echo 'PHP not working')"
 
 echo "=========================================="
 echo "Server1 (Web/FTP Server) ready!"
@@ -289,8 +349,11 @@ echo "  - Anonymous access: DISABLED"
 echo "  - Local users: ENABLED (users in /etc/passwd)"
 echo "  - Allowed users: vagrant (in /etc/vsftpd.userlist)"
 echo "  - Upload enabled: YES"
+echo "  - Home directory: /home/vagrant"
+echo "  - Web directory: /var/www/html (accessible via 'cd /var/www/html')"
 echo "  - Upload directory: /var/www/html/uploads"
-echo "  - Chroot enabled: YES (users confined to /var/www/html)"
+echo "  - Quick access: 'cd www' (symlink in home directory)"
+echo "  - Chroot: DISABLED (full filesystem access)"
 echo ""
 echo "Test Pages:"
 echo "  - http://192.168.10.10/ (main page)"
