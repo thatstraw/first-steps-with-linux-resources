@@ -18,6 +18,18 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 sysctl -p
 
+# Configure SSH to allow password authentication
+echo "Configuring SSH for password authentication..."
+# Enable password authentication in SSH
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# Also handle cloud-init config if it exists
+if [ -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf ]; then
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+fi
+# Ensure PasswordAuthentication is enabled
+echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+systemctl restart ssh
+
 # Install ufw and tools with retries
 echo "Installing packages..."
 for i in {1..3}; do

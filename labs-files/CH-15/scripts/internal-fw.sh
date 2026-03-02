@@ -15,6 +15,18 @@ nameserver 8.8.4.4
 nameserver 1.1.1.1
 EOF
 
+# Configure SSH to allow password authentication
+echo "Configuring SSH for password authentication..."
+# Enable password authentication in SSH
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# Also handle cloud-init config if it exists
+if [ -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf ]; then
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+fi
+# Ensure PasswordAuthentication is enabled
+echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+systemctl restart sshd
+
 # Install firewalld and tools
 dnf install -y firewalld net-tools bind-utils traceroute
 
