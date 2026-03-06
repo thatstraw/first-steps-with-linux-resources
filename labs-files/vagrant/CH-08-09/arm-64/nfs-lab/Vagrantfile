@@ -1,0 +1,61 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "rockylinux10"
+  config.vm.boot_timeout = 600
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  
+  # SSH options for custom boxes
+  config.ssh.forward_agent = true
+  config.ssh.verify_host_key = false
+
+  # NFS Server
+  config.vm.define "nfs-server" do |server|
+    server.vm.hostname = "nfs-server"
+    server.vm.network "private_network", type: "dhcp"
+    server.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 2
+      vb.gui = true
+      # Fix DNS resolution issues
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      vb.customize ["modifyvm", :id, "--natdnspassdomain1", "on"]
+    end
+
+    # Three extra disks for the server (Total 4 including boot)
+    (1..3).each do |i|
+      server.vm.disk :disk, size: "2GB", name: "server-disk-#{i}"
+    end
+
+    server.vm.provision "shell", inline: <<-SHELL
+      set -eux
+      dnf update -y
+      dnf install -y nfs-utils
+      systemctl enable --now rpcbind nfs-server
+    SHELL
+  end
+
+  # NFS Client
+  config.vm.define "nfs-client" do |client|
+    client.vm.hostname = "nfs-client"
+    client.vm.network "private_network", type: "dhcp"
+    client.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 2
+      vb.gui = true
+      # Fix DNS resolution issues
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      vb.customize ["modifyvm", :id, "--natdnspassdomain1", "on"]
+    end
+
+    # Two extra disks for the client
+    (1..2).each do |i|
+      client.vm.disk :disk, size: "2GB", name: "client-disk-#{i}"
+    end
+
+    client.vm.provision "shell", inline: <<-SHELL
+      set -eux
+      dnf update -y
+      dnf install -y nfs-utils autofs
+      systemctl enable --now rpcbind
+    SHELL
+  end
+end

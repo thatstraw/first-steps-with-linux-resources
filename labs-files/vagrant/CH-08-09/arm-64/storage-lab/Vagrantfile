@@ -1,0 +1,27 @@
+# storage-lab/Vagrantfile
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  config.vm.hostname = "storage-lab"
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 1024
+    vb.cpus = 2
+  end
+
+  # Resize the main OS disk (optional)
+  config.vm.disk :disk, size: "20GB", primary: true
+
+  # Add 6 extra lab disks (each 3GB)
+  (1..7).each do |i|
+    config.vm.disk :disk, size: "3GB", name: "lab-disk-#{i}"
+  end
+
+  # Provisioning
+  config.vm.provision "shell", inline: <<-SHELL
+    set -eux
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get install -y lvm2 mdadm quota nfs-common gdisk parted e2fsprogs xfsprogs linux-modules-extra-$(uname -r)
+  SHELL
+end
