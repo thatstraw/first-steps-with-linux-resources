@@ -1,0 +1,4 @@
+2025-01-01 10:27:18 ERROR Connection timeout: database
+2025-01-01 10:27:19 ERROR Stack trace follows
+2025-01-01 10:27:19 ERROR   at connection.py line 45
+2025-01-01 10:27:19 ERROR   at main.py line 123

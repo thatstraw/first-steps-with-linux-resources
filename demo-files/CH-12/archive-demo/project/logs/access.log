@@ -1,0 +1,7 @@
+2025-01-01 10:23:45 INFO User logged in: alice
+2025-01-01 10:24:12 INFO Request: GET /api/users
+2025-01-01 10:24:15 INFO Response: 200 OK
+2025-01-01 10:25:03 WARN Slow query detected: 1.2s
+2025-01-01 10:26:31 INFO User logged out: alice
+2025-01-01 10:27:18 ERROR Connection timeout: database
+2025-01-01 10:27:45 INFO Retry successful

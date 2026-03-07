@@ -1,0 +1,3 @@
+Original content of file2
+This file will be modified
+MODIFIED: New content added here!
