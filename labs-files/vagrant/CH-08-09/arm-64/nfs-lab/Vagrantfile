@@ -6,15 +6,16 @@ Vagrant.configure("2") do |config|
   # SSH options for custom boxes
   config.ssh.forward_agent = true
   config.ssh.verify_host_key = false
+  config.ssh.pty = true
 
   # NFS Server
   config.vm.define "nfs-server" do |server|
     server.vm.hostname = "nfs-server"
-    server.vm.network "private_network", type: "dhcp"
+    server.vm.network "private_network", ip: "192.168.56.10"
     server.vm.provider "virtualbox" do |vb|
       vb.memory = 2048
       vb.cpus = 2
-      vb.gui = true
+      # vb.gui = true
       # Fix DNS resolution issues
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
       vb.customize ["modifyvm", :id, "--natdnspassdomain1", "on"]
@@ -26,21 +27,50 @@ Vagrant.configure("2") do |config|
     end
 
     server.vm.provision "shell", inline: <<-SHELL
-      set -eux
-      dnf update -y
-      dnf install -y nfs-utils
+      set -ex
+      
+      echo "--- Pre-flight: Checking Network Connectivity ---"
+      if ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        echo "[OK] Internet access (Ping 8.8.8.8)"
+      else
+        echo "[ERROR] No internet access. Check VirtualBox settings."
+        exit 1
+      fi
+
+      if curl -s --head https://dl.rockylinux.org >/dev/null 2>&1; then
+        echo "[OK] Rocky Linux repositories reachable"
+      else
+        echo "[ERROR] Cannot reach Rocky Linux repos. Check DNS/Firewall."
+        exit 1
+      fi
+
+      echo "--- Step 1: Cleaning and Refreshing DNF ---"
+      dnf install -y --refresh nfs-utils
+      echo "--- Step 2: Reloading Systemd ---"
+      systemctl daemon-reload
+      echo "--- Step 3: Enabling Services ---"
       systemctl enable --now rpcbind nfs-server
+      
+      echo "--- Step 4: Forcing Static IP on Private Interface ---"
+      # Identify the third interface (enp0s9) and its NetworkManager connection
+      IFACE=$(ip -o link show | awk -F': ' 'NR==3 {print $2}')
+      CONN=$(nmcli -t -f DEVICE,NAME connection show --active | grep "^$IFACE" | cut -d: -f2)
+      nmcli connection modify "$CONN" ipv4.addresses 192.168.56.10/24 ipv4.method manual
+      nmcli connection up "$CONN"
+      ip addr show "$IFACE"
+
+      echo "--- Provisioning Complete ---"
     SHELL
   end
 
   # NFS Client
   config.vm.define "nfs-client" do |client|
     client.vm.hostname = "nfs-client"
-    client.vm.network "private_network", type: "dhcp"
+    client.vm.network "private_network", ip: "192.168.56.20"
     client.vm.provider "virtualbox" do |vb|
       vb.memory = 2048
       vb.cpus = 2
-      vb.gui = true
+      # vb.gui = true
       # Fix DNS resolution issues
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
       vb.customize ["modifyvm", :id, "--natdnspassdomain1", "on"]
@@ -52,10 +82,39 @@ Vagrant.configure("2") do |config|
     end
 
     client.vm.provision "shell", inline: <<-SHELL
-      set -eux
-      dnf update -y
-      dnf install -y nfs-utils autofs
+      set -ex
+
+      echo "--- Pre-flight: Checking Network Connectivity ---"
+      if ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        echo "[OK] Internet access (Ping 8.8.8.8)"
+      else
+        echo "[ERROR] No internet access. Check VirtualBox settings."
+        exit 1
+      fi
+
+      if curl -s --head https://dl.rockylinux.org >/dev/null 2>&1; then
+        echo "[OK] Rocky Linux repositories reachable"
+      else
+        echo "[ERROR] Cannot reach Rocky Linux repos. Check DNS/Firewall."
+        exit 1
+      fi
+
+      echo "--- Step 1: Cleaning and Refreshing DNF ---"
+      dnf install -y --refresh nfs-utils autofs
+      echo "--- Step 2: Reloading Systemd ---"
+      systemctl daemon-reload
+      echo "--- Step 3: Enabling Services ---"
       systemctl enable --now rpcbind
+      
+      echo "--- Step 4: Forcing Static IP on Private Interface ---"
+      # Identify the third interface (enp0s9) and its NetworkManager connection
+      IFACE=$(ip -o link show | awk -F': ' 'NR==3 {print $2}')
+      CONN=$(nmcli -t -f DEVICE,NAME connection show --active | grep "^$IFACE" | cut -d: -f2)
+      nmcli connection modify "$CONN" ipv4.addresses 192.168.56.20/24 ipv4.method manual
+      nmcli connection up "$CONN"
+      ip addr show "$IFACE"
+
+      echo "--- Provisioning Complete ---"
     SHELL
   end
 end
