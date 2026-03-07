@@ -40,6 +40,10 @@ network:
         addresses: [8.8.8.8, 8.8.4.4]
 EOF
 
+# Set proper permissions (IMPORTANT!)
+chmod 600 /etc/netplan/01-netcfg.yaml
+
+# Apply the configuration
 netplan apply
 sleep 2
 
